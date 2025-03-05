@@ -6,3 +6,4 @@ streamlit
 python-dotenv
 langchain-community
 langgraph
+fpdf
