@@ -92,7 +92,7 @@ AI-agent-based-Deep-Research/
 ## Dependencies
 
 -   **LangChain/LangGraph**: For workflow orchestration
--   **Groq API**: For AI model interactions using llama-3.1-8b-instant
+-   **Google Gemini 1.5 Pro API**: For AI model interactions
 -   **Tavily API**: For web search capabilities
 -   **FPDF**: For PDF generation from markdown
 -   **Streamlit**: For error display and potential UI
@@ -112,7 +112,7 @@ This project presents a Deep Research AI Agentic System designed to crawl websit
 
 ### 2. Introduction
 
-In today’s fast-paced digital landscape, automated research systems are invaluable for gathering and processing information from a multitude of online sources. This project meets an assignment challenge by designing an agentic system that not only collects data via web crawling (leveraging Tavily) but also drafts comprehensive reports using language models. The dual-agent system divides responsibilities between:
+In today's fast-paced digital landscape, automated research systems are invaluable for gathering and processing information from a multitude of online sources. This project meets an assignment challenge by designing an agentic system that not only collects data via web crawling (leveraging Tavily) but also drafts comprehensive reports using language models. The dual-agent system divides responsibilities between:
 
 -   **Data Collection & Curation:** Responsible for searching, crawling, and curating relevant online content.
 -   **Answer Drafting:** Focused on synthesizing curated data into a structured, readable report.
@@ -176,6 +176,7 @@ The system is structured into a set of modular components that are organized int
 -   **Frameworks & Libraries:**
     
     -   **LangChain & LangGraph:** Manage model interactions and state-based workflow execution.
+    -   **Google Gemini 1.5 Pro API:** Provides advanced language modeling capabilities for research and report generation.
     -   **Tavily API:** Provides robust search and extraction capabilities for online information.
     -   **Streamlit:** Offers a user-friendly interface for running and interacting with the research system.
     -   **FPDF:** Used for converting markdown content into downloadable PDF reports.
