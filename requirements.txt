@@ -1,7 +1,7 @@
 langchain-core
 pydantic
 tavily-python
-langchain-groq
+langchain-google-genai
 streamlit
 python-dotenv
 langchain-community

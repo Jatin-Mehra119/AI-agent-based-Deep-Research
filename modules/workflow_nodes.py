@@ -5,12 +5,19 @@ import time
 from datetime import datetime
 import streamlit as st
 
-from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
-from langchain_groq import ChatGroq
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage, HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from modules.models import ResearchState, TavilyExtractInput, QuotedAnswer
 from modules.rate_limiter import rate_limited_execute
 from modules.pdf_utils import generate_pdf_from_md
 from modules.tools import tools_by_name, tavily_client
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+# Set up the Google API key
+os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+
 
 # Node: Tool Node – execute tools (e.g. search)
 async def tool_node(state: ResearchState):
@@ -21,7 +28,8 @@ async def tool_node(state: ResearchState):
     for tool_call in state["messages"][-1].tool_calls:
         if tool_call["name"] == "tavily_search":
             tool = tools_by_name["tavily_search"]
-            results = await tool.ainvoke(tool_call["args"])
+            # Use input parameter instead of direct arguments
+            results = await tool.ainvoke(input=tool_call["args"])
             
             new_docs = 0
             for doc in results:
@@ -44,22 +52,22 @@ async def tool_node(state: ResearchState):
         "iteration": state.get('iteration', 0) + 1  # Increment iteration count
     }
 
-# Node: Research Model – perform research using ChatGroq
+# Node: Research Model – perform research using Gemini
 async def research_model(state: ResearchState):
     prompt = f"""Today: {datetime.now().strftime('%d/%m/%Y')}
 Research target: {state['company']}
 Keywords: {state['company_keywords']}"""
     
-    messages = state['messages'] + [SystemMessage(content=prompt)]
-    
-    model = ChatGroq(
-        model="llama-3.1-8b-instant",
+    model = ChatGoogleGenerativeAI(
+        model="gemini-1.5-pro",  
         temperature=0,
-        max_tokens=4500,
+        max_output_tokens=4500,
         timeout=30
     ).bind_tools(list(tools_by_name.values()))
     
-    response = await rate_limited_execute(model.ainvoke, messages)
+    # Rest of the function remains the same
+    message = HumanMessage(content=prompt)
+    response = await rate_limited_execute(model.ainvoke, input=[message])
     return {"messages": [response]}
 
 # Conditional edge decision function
@@ -75,13 +83,17 @@ async def select_and_process(state: ResearchState):
 Keywords: {state['company_keywords']}
 Exclusions: {state['exclude_keywords']}"""
     
-    model = ChatGroq(
-        model="llama-3.1-8b-instant",
+    model = ChatGoogleGenerativeAI(
+        model="gemini-1.5-pro",  # Changed from gemini-2.0-pro
         temperature=0,
-        max_tokens=3500
+        max_output_tokens=3500
     ).with_structured_output(TavilyExtractInput)
     
-    structured_output = await rate_limited_execute(model.ainvoke, [SystemMessage(content=prompt)])
+    # Use a simple message structure with a human message
+    message = HumanMessage(content=prompt)
+    
+    # Use input parameter with a list containing the message
+    structured_output = await rate_limited_execute(model.ainvoke, input=[message])
     relevant_urls = structured_output.urls
     RAG_docs = {url: state['documents'][url] for url in relevant_urls if url in state['documents']}
     
@@ -129,15 +141,21 @@ Sources: {state['RAG_docs']}
 
 Generate the report in a structured and professional markdown format.
 """
-        model = ChatGroq(
-            model="llama-3.1-8b-instant",
+        model = ChatGoogleGenerativeAI(
+            model="gemini-1.5-pro",  # Changed from gemini-2.0-pro
             temperature=0,
-            max_tokens=5000
-        ).with_structured_output(QuotedAnswer)  # Specify the schema here
-    
-        response = await rate_limited_execute(model.ainvoke, [SystemMessage(content=prompt)])
+            max_output_tokens=5000
+        ).with_structured_output(QuotedAnswer)
+        
+        # Rest of the function remains the same
+        # Use a simple HumanMessage
+        message = HumanMessage(content=prompt)
+        
+        # Use input parameter with a list containing the message
+        response = await rate_limited_execute(model.ainvoke, input=[message])
         full_report = response.answer
         
+        # Rest of the function remains the same
         if not full_report.strip():
             full_report = f"## {state['company']} Weekly Report\nNo significant updates found this week."
             
