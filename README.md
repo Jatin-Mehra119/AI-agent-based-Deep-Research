@@ -33,7 +33,7 @@ The system is built using a modular architecture based on LangGraph's StateGraph
 ```
 ### Core Components
 
-1.  **Research Node**: Coordinates the research process using the Groq LLM API
+1.  **Research Node**: Coordinates the research process using the Google Generative AI (Gemini)
 2.  **Tools Node**: Executes web searches using the Tavily API
 3.  **Curate Node**: Filters and processes collected documents
 4.  **Write Node**: Generates structured markdown reports with citations
@@ -72,7 +72,6 @@ AI-agent-based-Deep-Research/
 ├── modules/                # Implementation files
 │   ├── models.py           # Data structures and type definitions
 │   ├── pdf_utils.py        # PDF generation utilities
-│   ├── rate_limiter.py     # API rate limiting
 │   ├── tools.py            # External service integrations
 │   ├── workflow_nodes.py   # Individual workflow components
 │   └── workflow_setup.py   # Workflow graph definition
@@ -80,7 +79,6 @@ AI-agent-based-Deep-Research/
 ├── Docs/                   # Module documentation
 │   ├── models.md
 │   ├── pdf_utils.md
-│   ├── rate_limiter.md
 │   ├── tools.md
 │   ├── workflow_nodes.md
 │   └── workflow_setup.md

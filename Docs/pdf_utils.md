@@ -1,12 +1,12 @@
 # PDF Utils Module Documentation
 
-The  pdf_utils.py  module provides functionality for converting Markdown content to PDF files using the FPDF library. This module includes utilities for handling text sanitization and PDF generation.
+The pdf_utils.py module provides functionality for converting Markdown content to PDF files using a hybrid approach with pdfkit (wkhtmltopdf) and FPDF library. This module includes utilities for handling text sanitization and PDF generation.
 
 ## Classes
 
 ### PDF
 
-A subclass of  FPDF  that customizes the header and footer sections of PDF documents.
+A subclass of FPDF that customizes the header and footer sections of PDF documents.
 
 -   **header()**: Sets up a blank header with Arial font
 -   **footer()**: Adds page numbers at the bottom of each page
@@ -37,11 +37,28 @@ Replaces common problematic Unicode characters with their ASCII equivalents.
 
 ### generate_pdf_from_md(content: str, filename: str = 'output.pdf') -> str
 
-Converts Markdown content to a PDF file.
+Converts Markdown content to a PDF file using a hybrid approach.
 
 -   **Parameters**:
     -   content: Markdown formatted text to convert
     -   filename: Output PDF file path (defaults to 'output.pdf')
+-   **Returns**: Success message with filename or error message
+-   **Approach**:
+    -   Primary method: Uses pdfkit (wkhtmltopdf) to convert markdown to HTML and then to PDF
+    -   Fallback method: Uses FPDF if the pdfkit method fails
+-   **Features**:
+    -   Supports markdown extensions: 'extra', 'smarty', 'tables'
+    -   Applies custom HTML styling including font, colors, and formatting
+    -   Handles markdown headers with appropriate formatting
+    -   Maintains paragraph spacing and styling
+
+### fallback_pdf_generation(content: str, filename: str) -> str
+
+Provides a fallback method for PDF generation using FPDF when the primary pdfkit method fails.
+
+-   **Parameters**:
+    -   content: Markdown formatted text to convert
+    -   filename: Output PDF file path
 -   **Returns**: Success message with filename or error message
 -   **Features**:
     -   Handles Markdown headers (# to ####) with appropriate formatting

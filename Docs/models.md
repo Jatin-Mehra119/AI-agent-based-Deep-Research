@@ -11,13 +11,13 @@ A `TypedDict` that represents the complete state of the research workflow.
 -   **Type**: `TypedDict`
 -   **Fields**:
     -   `company`: `str` - The company being researched
-    -   `keywords`: `str` - Keywords relevant to the company for search filtering
+    -   `company_keywords`: `str` - Keywords related to the company for focused searching
     -   `exclude_keywords`: `str` - Keywords to exclude from search results
     -   `report`: `str` - The generated markdown report
-    -   `collected_documents`: `Dict[str, Dict[Union[str, int], Union[str, float]]]` - All collected documents indexed by URL
-    -   `curated_documents`: `Dict[str, Dict[Union[str, int], Union[str, float]]]` - Curated subset of documents for report generation
-    -   `conversation_history`: `List[AnyMessage]` - Conversation history between system components
-    -   `iteration_count`: `int` - Current iteration count of the research loop
+    -   `documents`: `Dict[str, Dict[Union[str, int], Union[str, float]]]` - Raw documents retrieved during research, indexed by URL
+    -   `RAG_docs`: `Dict[str, Dict[Union[str, int], Union[str, float]]]` - Documents processed for RAG (Retrieval Augmented Generation)
+    -   `messages`: `Annotated[List[AnyMessage], ...]` - List of conversation messages
+    -   `iteration`: `int` - Current iteration count in the research process
 
 ### Citation
 
@@ -25,8 +25,8 @@ A Pydantic model for representing source citations in the final report.
 
 -   **Type**: `BaseModel`
 -   **Fields**:
-    -   `url`: `str` - URL of the source document
-    -   `quoted_text`: `str` - Verbatim text quoted from the source
+    -   `source_id`: `str` - Source URL for citation
+    -   `quote`: `str` - Verbatim quote from source
 
 ### QuotedAnswer
 
@@ -34,8 +34,8 @@ A Pydantic model for structured report output, including citations.
 
 -   **Type**: `BaseModel`
 -   **Fields**:
-    -   `content`: `str` - Complete markdown report content
-    -   `citations`: `List[Citation]` - List of citations used in the report
+    -   `answer`: `str` - Full report content in markdown format
+    -   `citations`: `List[Citation]` - List of source citations used in the report
 
 ## Search-Related Models
 
@@ -45,9 +45,9 @@ A Pydantic model representing a single search query.
 
 -   **Type**: `BaseModel`
 -   **Fields**:
-    -   `query`: `str` - The search query text
-    -   `search_type`: `str` - Search type, either "general" or "news"
-    -   `time_range`: `int` - Time range for news searches in days
+    -   `query`: `str` - Search query
+    -   `topic`: `str` - Search type, either "general" or "news"
+    -   `days`: `int` - Days back for news search
 
 ### TavilySearchInput
 
@@ -55,7 +55,7 @@ A Pydantic model for executing multiple searches in parallel.
 
 -   **Type**: `BaseModel`
 -   **Fields**:
-    -   `queries`: `List[TavilyQuery]` - List of search queries to execute concurrently
+    -   `sub_queries`: `List[TavilyQuery]` - List of search queries to execute in parallel
 
 ### TavilyExtractInput
 
@@ -63,10 +63,10 @@ A Pydantic model for specifying URLs to extract content from.
 
 -   **Type**: `BaseModel`
 -   **Fields**:
-    -   `urls`: `List[str]` - List of URLs to extract content from
+    -   `urls`: `List[str]` - List of URLs to extract content from, example: ["https://example.com/news", "https://example.com/press"]
 
 ## Dependencies
 
--   `typing`: For type annotations
--   `pydantic`: For data validation and schema definitions
--   `langchain_core.messages`: For message type definitions
+-   `typing`: For type annotations (TypedDict, List, Annotated, Union, Dict)
+-   `pydantic`: For data validation and schema definitions (BaseModel, Field)
+-   `langchain_core.messages`: For message type definitions (AnyMessage)

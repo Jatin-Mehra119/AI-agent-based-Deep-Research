@@ -58,5 +58,4 @@ The module compiles the workflow into an executable application:
 ┌─────────┐     ┌─────────┐     ┌─────────┐
 │ curate  ├─────► write   ├─────► publish ├─────► END
 └─────────┘     └─────────┘     └─────────┘
-
 ```

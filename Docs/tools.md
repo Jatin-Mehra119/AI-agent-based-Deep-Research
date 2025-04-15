@@ -8,16 +8,26 @@ The  tools.py  module provides utility tools for accessing external services lik
 
 A LangChain tool that performs concurrent web searches using the Tavily search API.
 
--   **Decorator**:  `@tool("tavily_search", args_schema=TavilySearchInput, return_direct=True)`
+-   **Decorator**:  `@tool("tavily_search", args_schema=TavilySearchInput)`
 -   **Parameters**:
     -   sub_queries: A list of  TavilyQuery  objects containing search parameters
--   **Returns**: A list of unique search results
+-   **Returns**: A list of search results combined from all queries
 -   **Features**:
     -   Executes multiple search queries in parallel using  asyncio
     -   Includes current month/year in search queries for recency
-    -   Removes duplicate results based on URL
-    -   Configures search with "advanced" depth and raw content inclusion
-    -   Handles errors gracefully with Streamlit error displays
+    -   Configures search with topic and date range filtering
+    -   Limits results to 10 per query
+
+### tavily_extract
+
+A utility function for extracting content from URLs using the Tavily API.
+
+-   **Parameters**:
+    -   urls: A list of URLs to extract content from
+-   **Returns**: Extracted content from the provided URLs
+-   **Implementation Details**:
+    -   Handles errors gracefully with error logging
+    -   Returns an empty results list on error
 
 ### Inner Functions
 
@@ -26,12 +36,13 @@ A LangChain tool that performs concurrent web searches using the Tavily search A
 Helper function that executes a single search query.
 
 -   **Parameters**:
-    -   query: A  TavilyQuery  object containing search parameters
+    -   itm: A  TavilyQuery  object containing search parameters
 -   **Returns**: A list of search results or an empty list on error
 -   **Implementation Details**:
     -   Appends current month/year to search queries
-    -   Limits results to 5 per query
-    -   Includes raw content but excludes Tavily's summarized answers
+    -   Limits results to 10 per query
+    -   Uses topic and days parameters for filtering
+    -   Includes error handling with logging
 
 ## Global Variables
 
@@ -43,5 +54,5 @@ Helper function that executes a single search query.
 
 -   **AsyncTavilyClient**: For making asynchronous API calls to Tavily
 -   **TavilySearchInput**,  **TavilyQuery**: Schema classes for validating input
--   **streamlit**: For displaying errors in the UI
+-   **asyncio**: For parallel execution of search queries
 -   **langchain_core.tools**: For the  `@tool`  decorator
