@@ -1,3 +1,22 @@
+"""
+Workflow Nodes Module
+=====================
+
+This module defines the core nodes in the AI research workflow pipeline. Each node
+represents a distinct step in the research process, from information gathering to
+report generation and publishing.
+
+The workflow follows these main steps:
+1. Tool execution (search, extraction)
+2. Research using AI models
+3. Document curation and selection
+4. Report generation
+5. PDF publishing
+
+Each function is designed to work with a ResearchState object that maintains the
+state throughout the workflow execution process.
+"""
+
 import os
 from datetime import datetime
 import streamlit as st
@@ -17,6 +36,19 @@ os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
 # Node: Tool Node – execute tools (e.g. search)
 async def tool_node(state: ResearchState):
+    """
+    Execute AI-requested tools (like search operations) and process their results.
+    
+    This node processes tool calls made by the AI model, invokes the appropriate tools,
+    collects new documents/information, and updates the state with the results.
+    It also handles deduplication of documents based on URLs.
+    
+    Args:
+        state (ResearchState): The current state of the research workflow
+        
+    Returns:
+        dict: Updated state with new messages, documents, and iteration count
+    """
     docs = state.get('documents', {})
     docs_str = ""
     msgs = []
@@ -49,6 +81,22 @@ async def tool_node(state: ResearchState):
 
 # Node: Research Model – perform research using Gemini
 async def research_model(state: ResearchState):
+    """
+    Perform research using the Google Generative AI (Gemini) model.
+    
+    This node constructs a research prompt based on the current state,
+    initializes a Gemini model with appropriate tool bindings, and invokes
+    the model to gather information about the specified company.
+    
+    Args:
+        state (ResearchState): The current state of the research workflow
+        
+    Returns:
+        dict: Updated state with model's response messages
+        
+    Note:
+        Includes error handling with Streamlit feedback for debugging purposes
+    """
     # Build a prompt with current date, company, and keywords
     prompt = f"""Today's date is {datetime.now().strftime('%d/%m/%Y')}.\n
 You are an expert researcher tasked with gathering information for a weekly report on recent developments in portfolio companies.\n
@@ -91,6 +139,25 @@ The user has provided the following company keywords: {state['company_keywords']
 
 # Conditional edge decision function
 def should_continue(state: ResearchState) -> str:
+    """
+    Decide the next workflow step based on the current state.
+    
+    This function examines the current state to determine whether to:
+    - Continue gathering information (tools)
+    - Proceed to document curation (curate)
+    
+    Args:
+        state (ResearchState): The current state of the research workflow
+        
+    Returns:
+        str: Next workflow step, either "tools" or "curate"
+        
+    Decision logic:
+    - If max iterations reached (5) -> curate
+    - If model wants to use more tools -> tools
+    - If model indicates completion -> curate
+    - Default -> tools
+    """
     last_msg = state['messages'][-1]
     
     # Check if we've reached max iterations (as a safety measure)
@@ -108,6 +175,22 @@ def should_continue(state: ResearchState) -> str:
 
 # Node: Curate – analyze and select relevant documents
 async def select_and_process(state: ResearchState):
+    """
+    Analyze and select the most relevant documents for report generation.
+    
+    This node filters the collected documents to identify those most relevant to the
+    company of interest, considering keywords and exclusion criteria. It then
+    extracts raw content from the selected URLs using the Tavily API.
+    
+    Args:
+        state (ResearchState): The current state of the research workflow
+        
+    Returns:
+        dict: Updated state with selected documents and their content
+        
+    Note:
+        Includes error handling with Streamlit feedback for debugging purposes
+    """
     # Build more detailed prompt
     prompt = f"""You are an expert researcher specializing in analyzing portfolio companies.\n
 Your current task is to review a list of documents and select the most relevant URLs related to recent developments for the following company: {state['company']}.\n
@@ -174,6 +257,24 @@ Your objective is to choose the documents that pertain to the correct company an
 
 # Node: Write Report – generate the markdown report
 async def write_report(state: ResearchState):
+    """
+    Generate a comprehensive markdown report based on curated documents.
+    
+    This node uses the Gemini model to generate a detailed, well-formatted report
+    about the company of interest, based on the curated documents. The report includes
+    citations and references to the source documents.
+    
+    Args:
+        state (ResearchState): The current state of the research workflow, including
+                              curated documents (RAG_docs)
+        
+    Returns:
+        dict: Updated state with the generated report and confirmation message
+        
+    Note:
+        Uses structured output format (QuotedAnswer) to ensure proper citations
+        Includes error handling with Streamlit feedback for debugging purposes
+    """
     # Log state information for debugging
     st.info(f"Starting report generation for {state['company']}")
     st.info(f"Number of RAG docs: {len(state.get('RAG_docs', {}))}")
@@ -219,17 +320,37 @@ Here are all the documents you should base your answer on:\n{state['RAG_docs']}\
 
 # Node: Publish – generate PDF from the report
 def generate_pdf(state: ResearchState):
+    """
+    Convert the markdown report to PDF and save it to the file system.
+    
+    This node takes the generated markdown report and converts it to a
+    PDF document, saving it in the 'reports' directory with a filename
+    based on the company name and current timestamp.
+    
+    Args:
+        state (ResearchState): The current state of the research workflow,
+                              including the generated report
+        
+    Returns:
+        dict: Updated state with PDF generation status message
+        
+    Note:
+        Creates the reports directory if it doesn't exist
+        Sanitizes company name to ensure valid filename
+        Includes error handling with Streamlit feedback for debugging purposes
+    """
     # Create directory if it doesn't exist
     directory = "reports"
     if not os.path.exists(directory):
         os.makedirs(directory)
     
     # Generate filename with timestamp - Fix invalid characters in filename
-    file_name = f"{state['company']} Weekly Report {datetime.now().strftime('%Y-%m-%d %H-%M-%S')}"
+    safe_company_name = "".join([c for c in state['company'] if c.isalnum() or c.isspace()]).strip()
+    file_name = f"{safe_company_name} Weekly Report {datetime.now().strftime('%Y-%m-%d %H-%M-%S')}"
     
     # Use a more detailed path for debugging
-    full_path = os.path.abspath(f'{directory}/{file_name}.pdf')
-    st.info(f"Attempting to generate PDF at: {full_path}")
+    full_path = os.path.join(directory, f"{file_name}.pdf")
+    st.info(f"Generating PDF at: {full_path}")
     
     # Check if report exists in state
     if not state.get('report'):
@@ -238,9 +359,19 @@ def generate_pdf(state: ResearchState):
     
     # Generate PDF with better error handling
     try:
+        report_length = len(state['report'])
+        st.info(f"Converting markdown content ({report_length} chars) to PDF...")
+        
         msg = generate_pdf_from_md(state['report'], filename=full_path)
-        st.success(f"PDF generated successfully: {full_path}")
-        return {"messages": [AIMessage(content=msg)]}
+        
+        if os.path.exists(full_path):
+            file_size = os.path.getsize(full_path)
+            st.success(f"PDF generated successfully: {full_path} ({file_size} bytes)")
+            return {"messages": [AIMessage(content=msg)]}
+        else:
+            st.error(f"PDF file was not created at {full_path}")
+            return {"messages": [AIMessage(content="PDF generation failed: output file not found")]}
+            
     except Exception as e:
         error_msg = f"Error generating PDF: {str(e)}"
         st.error(error_msg)

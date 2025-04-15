@@ -56,16 +56,28 @@ async def run_workflow(company, keywords, exclude, guidelines):
                     if "report" in step and step["report"]:
                         report_container.markdown("## Generated Report")
                         report_container.markdown(step["report"])
-                        # Display a download link for the PDF if it exists
-                        pdf_path = f"reports/{company} Weekly Report {datetime.now().strftime('%Y-%m-%d %H-%M-%S')}.pdf"
-                        if os.path.exists(pdf_path):
-                            with open(pdf_path, "rb") as f:
-                                report_container.download_button(
-                                    label="Download PDF Report",
-                                    data=f.read(),
-                                    file_name=f"{company} Report.pdf",
-                                    mime="application/pdf"
-                                )
+                        
+                        # Look for PDF files in the reports directory
+                        report_dir = "reports"
+                        if os.path.exists(report_dir):
+                            # Get PDF files that match the company name
+                            safe_company = "".join([c for c in company if c.isalnum() or c.isspace()]).strip()
+                            pdf_files = [f for f in os.listdir(report_dir) 
+                                         if f.endswith('.pdf') and safe_company in f]
+                            
+                            if pdf_files:
+                                # Get the most recent PDF file
+                                latest_pdf = max([os.path.join(report_dir, f) for f in pdf_files], 
+                                                 key=os.path.getmtime)
+                                
+                                # Offer as a download
+                                with open(latest_pdf, "rb") as f:
+                                    report_container.download_button(
+                                        label="Download PDF Report",
+                                        data=f.read(),
+                                        file_name=os.path.basename(latest_pdf),
+                                        mime="application/pdf"
+                                    )
                         
     except Exception as e:
         status_container.error(f"Workflow error: {str(e)}")

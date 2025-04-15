@@ -7,3 +7,5 @@ python-dotenv
 langchain-community
 langgraph
 fpdf
+markdown
+pdfkit
