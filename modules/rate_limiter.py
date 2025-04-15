@@ -27,7 +27,7 @@ class TokenBucket:
                 self.last_update = time.time()
                 return True
 
-def groq_token_estimator(text: str) -> int:
+def groq_token_estimator(text: str) -> int: # Same for Gemini
     """Approximate token count assuming ~3.5 characters per token."""
     return max(1, int(len(str(text)) / 3.5))
 
@@ -37,10 +37,16 @@ token_bucket = TokenBucket(6000, 100)
 async def rate_limited_execute(model_call, *args, **kwargs):
     """
     Wrapper to enforce rate limits before calling the model.
-    Expects a list of messages in kwargs and optionally max_tokens.
+    Expects input parameter containing messages.
     """
-    input_tokens = sum(groq_token_estimator(msg.content) for msg in kwargs.get('messages', []))
-    output_tokens = kwargs.get('max_tokens', 2000)
+    # Check if 'input' is in kwargs and contains messages
+    messages = kwargs.get('input', [])
+    if not isinstance(messages, list):
+        messages = [messages]
+    
+    # Calculate input tokens based on message content
+    input_tokens = sum(groq_token_estimator(msg.content) for msg in messages if hasattr(msg, 'content'))
+    output_tokens = kwargs.get('max_tokens', 2000) or kwargs.get('max_output_tokens', 2000)
     total_tokens = input_tokens + output_tokens
 
     await token_bucket.consume(total_tokens)

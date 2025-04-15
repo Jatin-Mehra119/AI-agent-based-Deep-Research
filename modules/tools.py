@@ -1,44 +1,58 @@
 import asyncio
-import streamlit as st
 from datetime import datetime
-from modules.models import TavilySearchInput, TavilyQuery
+from typing import List
+
 from tavily import AsyncTavilyClient
 from langchain_core.tools import tool
+from modules.models import TavilySearchInput, TavilyQuery
 
 # Initialize the Tavily client
 tavily_client = AsyncTavilyClient()
 
-@tool("tavily_search", args_schema=TavilySearchInput, return_direct=True)
-async def tavily_search(sub_queries):
+@tool("tavily_search", args_schema=TavilySearchInput)
+async def tavily_search(sub_queries: List[TavilyQuery]):
     """
-    Perform parallel web searches using the Tavily API.
+    Perform searches for each sub-query using the Tavily search tool concurrently.
     """
-    async def perform_search(query: TavilyQuery):
+    # Define a coroutine function to perform a single search with error handling
+    async def perform_search(itm):
         try:
+            # Add date to the query as we need the most recent results
+            query_with_date = f"{itm.query} {datetime.now().strftime('%m-%Y')}"
+            
+            # Attempt to perform the search (using parameters from the original notebook)
             response = await tavily_client.search(
-                query=f"{query.query} {datetime.now().strftime('%Y-%m')}",
-                search_depth="advanced",
-                topic=query.topic,
-                max_results=5,
-                include_answer=False,
-                include_raw_content=True
+                query=query_with_date, 
+                topic=itm.topic, 
+                days=itm.days, 
+                max_results=10
             )
-            return response.get('results', [])
+            return response['results']
         except Exception as e:
-            st.error(f"Search error: {str(e)}")
+            # Log error but don't stop workflow
+            print(f"Error occurred during search for query '{itm.query}': {str(e)}")
             return []
     
-    # Execute all search queries concurrently
-    search_results = await asyncio.gather(*[perform_search(q) for q in sub_queries])
+    # Run all the search tasks in parallel
+    search_tasks = [perform_search(itm) for itm in sub_queries]
+    search_responses = await asyncio.gather(*search_tasks)
     
-    # Flatten the results and remove duplicates
-    unique_results = {}
-    for result_group in search_results:
-        for result in result_group:
-            if result['url'] not in unique_results:
-                unique_results[result['url']] = result
+    # Combine the results from all the responses
+    search_results = []
+    for response in search_responses:
+        search_results.extend(response)
     
-    return list(unique_results.values())
+    return search_results
+
+# Define the extract function (separate from the tool)
+async def tavily_extract(urls):
+    """Extract raw content from urls to gather additional information."""
+    try:
+        response = await tavily_client.extract(urls=urls)
+        return response
+    except Exception as e:
+        print(f"Error occurred during extract: {str(e)}")
+        return {"results": []}
 
 # Export the tools and a lookup dictionary for workflow nodes
 tools = [tavily_search]

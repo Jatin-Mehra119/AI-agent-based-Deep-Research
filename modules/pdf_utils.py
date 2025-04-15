@@ -1,6 +1,7 @@
 import re
 from fpdf import FPDF
 
+# A simple PDF class that extends FPDF to add a header and footer and to handle UTF-8 encoding issues.
 class PDF(FPDF):
     def header(self):
         self.set_font("Arial", "B", 12)

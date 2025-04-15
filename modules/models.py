@@ -11,7 +11,7 @@ class ResearchState(TypedDict):
     documents: Dict[str, Dict[Union[str, int], Union[str, float]]]
     RAG_docs: Dict[str, Dict[Union[str, int], Union[str, float]]]
     messages: Annotated[List[AnyMessage], ...]  # list of messages
-    iteration: int
+    iteration: int  # Make sure this is included
 
 # Citation model for source referencing in the report
 class Citation(BaseModel):
