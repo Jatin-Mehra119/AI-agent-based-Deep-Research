@@ -1,5 +1,7 @@
 # AI-Agent-Based Deep Research 
-[Live Demo](https://ai-agent-based-deep-research.streamlit.app/)
+[Live Demo![AI Research](https://github.com/user-attachments/assets/f384aba8-4d0c-48ee-abea-b381d8251c32)
+](https://ai-agent-based-deep-research.streamlit.app/)
+
 
 A sophisticated AI-powered research automation system that performs comprehensive company research, generates structured reports, and delivers polished PDF documents with minimal human input.
 
